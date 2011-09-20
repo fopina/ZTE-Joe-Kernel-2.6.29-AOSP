@@ -42,9 +42,9 @@
 #include "queue.h"
 
 /*
- * max 8 partitions per card
+ * max 16 partitions per card
  */
-#define MMC_SHIFT	3
+#define MMC_SHIFT	4
 #define MMC_NUM_MINORS	(256 >> MMC_SHIFT)
 
 static DECLARE_BITMAP(dev_use, MMC_NUM_MINORS);
@@ -83,7 +83,14 @@ static void mmc_blk_put(struct mmc_blk_data *md)
 	mutex_lock(&open_lock);
 	md->usage--;
 	if (md->usage == 0) {
+		int devmaj = MAJOR(disk_devt(md->disk));
 		int devidx = MINOR(disk_devt(md->disk)) >> MMC_SHIFT;
+
+		if (!devmaj)
+			devidx = md->disk->first_minor >> MMC_SHIFT;
+
+		blk_cleanup_queue(md->queue.queue);
+
 		__clear_bit(devidx, dev_use);
 
 		put_disk(md->disk);
@@ -595,10 +602,14 @@ static int mmc_blk_probe(struct mmc_card *card)
 	return 0;
 
  out:
+	mmc_cleanup_queue(&md->queue);
 	mmc_blk_put(md);
 
 	return err;
 }
+
+
+int remove_all_req(struct mmc_queue *mq);
 
 static void mmc_blk_remove(struct mmc_card *card)
 {
@@ -606,6 +617,13 @@ static void mmc_blk_remove(struct mmc_card *card)
 
 	if (md) {
 		/* Stop new requests from getting into the queue */
+		//ruanmeisi_20100603
+		printk(KERN_ERR"rms:%s %d\n", __FUNCTION__, __LINE__);
+		queue_flag_set_unlocked(QUEUE_FLAG_DEAD,
+					md->queue.queue);
+		remove_all_req(&md->queue);
+		//end
+		
 		del_gendisk(md->disk);
 
 		/* Then flush out any already in there */
@@ -633,6 +651,9 @@ static int mmc_blk_resume(struct mmc_card *card)
 
 	if (md) {
 		mmc_blk_set_blksize(md, card);
+#ifdef CONFIG_MMC_BLOCK_PARANOID_RESUME
+		md->queue.check_status = 1;
+#endif
 		mmc_queue_resume(&md->queue);
 	}
 	return 0;

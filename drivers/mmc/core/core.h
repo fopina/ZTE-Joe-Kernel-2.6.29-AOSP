@@ -18,8 +18,15 @@
 struct mmc_bus_ops {
 	void (*remove)(struct mmc_host *);
 	void (*detect)(struct mmc_host *);
+/* ATHENV */
+#if 0
 	void (*suspend)(struct mmc_host *);
 	void (*resume)(struct mmc_host *);
+#else
+	int (*suspend)(struct mmc_host *);
+	int (*resume)(struct mmc_host *);
+#endif
+/* ATHENV */
 };
 
 void mmc_attach_bus(struct mmc_host *host, const struct mmc_bus_ops *ops);
@@ -45,6 +52,9 @@ static inline void mmc_delay(unsigned int ms)
 void mmc_rescan(struct work_struct *work);
 void mmc_start_host(struct mmc_host *host);
 void mmc_stop_host(struct mmc_host *host);
+#ifdef CONFIG_MMC_AUTO_SUSPEND
+void mmc_auto_suspend_work(struct work_struct *work);
+#endif
 
 int mmc_attach_mmc(struct mmc_host *host, u32 ocr);
 int mmc_attach_sd(struct mmc_host *host, u32 ocr);

@@ -77,6 +77,9 @@ struct mmc_host_ops {
 	int	(*get_cd)(struct mmc_host *host);
 
 	void	(*enable_sdio_irq)(struct mmc_host *host, int enable);
+#ifdef CONFIG_MMC_AUTO_SUSPEND
+	int	(*auto_suspend)(struct mmc_host *host, int on);
+#endif
 };
 
 struct mmc_card;
@@ -145,8 +148,10 @@ struct mmc_host {
 	struct mmc_card		*card;		/* device attached to this host */
 
 	wait_queue_head_t	wq;
-
-	struct delayed_work	detect;
+ 
+	struct task_struct	*claimer;	 
+	int			claim_cnt;	 
+ 	struct delayed_work	detect;
 
 	const struct mmc_bus_ops *bus_ops;	/* current bus driver */
 	unsigned int		bus_refs;	/* reference counter */
@@ -161,13 +166,38 @@ struct mmc_host {
 
 	struct dentry		*debugfs_root;
 
-	unsigned long		private[0] ____cacheline_aligned;
+#ifdef CONFIG_MMC_EMBEDDED_SDIO
+	struct {
+		struct sdio_cis			*cis;
+		struct sdio_cccr		*cccr;
+		struct sdio_embedded_func	*funcs;
+		int				num_funcs;
+	} embedded_sdio_data;
+#endif
+
+#ifdef CONFIG_MMC_AUTO_SUSPEND
+	struct delayed_work	auto_suspend;
+	struct mutex		auto_suspend_mutex;
+	unsigned long 		last_busy;
+	int			idle_timeout;
+	unsigned long		auto_suspend_state;
+#endif
+     int    last_suspend_error;
+ 	unsigned long		private[0] ____cacheline_aligned;
 };
 
 extern struct mmc_host *mmc_alloc_host(int extra, struct device *);
 extern int mmc_add_host(struct mmc_host *);
 extern void mmc_remove_host(struct mmc_host *);
 extern void mmc_free_host(struct mmc_host *);
+
+#ifdef CONFIG_MMC_EMBEDDED_SDIO
+extern void mmc_set_embedded_sdio_data(struct mmc_host *host,
+				       struct sdio_cis *cis,
+				       struct sdio_cccr *cccr,
+				       struct sdio_embedded_func *funcs,
+				       int num_funcs);
+#endif
 
 static inline void *mmc_priv(struct mmc_host *host)
 {

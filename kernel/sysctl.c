@@ -76,6 +76,7 @@ extern int suid_dumpable;
 extern char core_pattern[];
 extern int pid_max;
 extern int min_free_kbytes;
+extern int min_free_order_shift;
 extern int pid_max_min, pid_max_max;
 extern int sysctl_drop_caches;
 extern int percpu_pagelist_fraction;
@@ -95,12 +96,15 @@ static int sixty = 60;
 static int neg_one = -1;
 #endif
 
+#if defined(CONFIG_DETECT_SOFTLOCKUP) || defined(CONFIG_HIGHMEM)
+static int one = 1;
+#endif
+
 #if defined(CONFIG_MMU) && defined(CONFIG_FILE_LOCKING)
 static int two = 2;
 #endif
 
 static int zero;
-static int one = 1;
 static unsigned long one_ul = 1;
 static int one_hundred = 100;
 
@@ -1095,6 +1099,14 @@ static struct ctl_table vm_table[] = {
 		.proc_handler	= &min_free_kbytes_sysctl_handler,
 		.strategy	= &sysctl_intvec,
 		.extra1		= &zero,
+	},
+	{
+		.ctl_name	= CTL_UNNUMBERED,
+		.procname	= "min_free_order_shift",
+		.data		= &min_free_order_shift,
+		.maxlen		= sizeof(min_free_order_shift),
+		.mode		= 0644,
+		.proc_handler	= &proc_dointvec
 	},
 	{
 		.ctl_name	= VM_PERCPU_PAGELIST_FRACTION,

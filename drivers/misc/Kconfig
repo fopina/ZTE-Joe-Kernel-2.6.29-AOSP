@@ -13,6 +13,23 @@ menuconfig MISC_DEVICES
 
 if MISC_DEVICES
 
+config ANDROID_PMEM
+	bool "Android pmem allocator"
+	default y
+
+config FM_SI4708
+	bool "Android fm semiconductor si470x from silicon libraries"
+	default y
+config ANDROID_PMEM_DEBUG
+	bool "Android pmem debug"
+	depends on ANDROID_PMEM
+	default n
+
+config ANDROID_PMEM_KAPI_TEST
+	tristate "Simple module to test Android pmem kernel API"
+	depends on ANDROID_PMEM
+	default m
+
 config ATMEL_PWM
 	tristate "Atmel AT32/AT91 PWM support"
 	depends on AVR32 || ARCH_AT91SAM9263 || ARCH_AT91SAM9RL || ARCH_AT91CAP9
@@ -159,6 +176,13 @@ config ENCLOSURE_SERVICES
 	  driver (SCSI/ATA) which supports enclosures
 	  or a SCSI enclosure device (SES) to use these services.
 
+config KERNEL_DEBUGGER_CORE
+	bool "Kernel Debugger Core"
+	default n
+	---help---
+	  Generic kernel debugging command processor used by low level
+	  (interrupt context) platform-specific debuggers.
+
 config SGI_XP
 	tristate "Support communication between SGI SSIs"
 	depends on NET
@@ -223,7 +247,50 @@ config DELL_LAPTOP
 	This driver adds support for rfkill and backlight control to Dell
 	laptops.
 
+config UID_STAT
+	bool "UID based statistics tracking exported to /proc/uid_stat"
+	default n
+
+config TSIF
+	depends on ARCH_MSM
+	tristate "TSIF (Transport Stream InterFace) support"
+	default n
+	---help---
+	  This driver supports low level TSIF interface. It provides API
+	  for upper layer drivers. If you have a TSIF hardware, say
+	  Y here and read <file:Documentation/arm/msm/tsif.txt>.
+
+	  To compile this driver as module, choose M here: the
+	  module will be called msm_tsif.
+
+config TSIF_CHRDEV
+	tristate "TSIF character device"
+	depends on TSIF
+	default n
+	---help---
+	  This driver uses low level TSIF interface. It provides character
+	  device useable from user space programs: one can read TSIF stream
+	  from this device.
+
+	  This driver may be used as example for TSIF API usage.
+
+	  To compile this driver as module, choose M here: the
+	  module will be called tsif_chrdev.
+
+config PMIC8058_PWM
+	tristate "Qualcomm PM8058 PWM support"
+	depends on PMIC8058
+	default y
+	help
+	  This option enables device driver support for the PWM channels
+	  on Qualcomm PM8058 chip. Pulse Width Modulation is used for
+	  purposes including software controlled brightness of backlight,
+	  motor control, and waveform generation.
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
+source "drivers/misc/video_core/720p/Kconfig"
+
+#source "drivers/misc/modemctl/Kconfig"
 
 endif # MISC_DEVICES

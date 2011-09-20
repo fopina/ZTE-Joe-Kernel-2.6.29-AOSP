@@ -121,7 +121,7 @@ static int mmc_decode_csd(struct mmc_card *card)
 	 * v1.2 has extra information in bits 15, 11 and 10.
 	 */
 	csd_struct = UNSTUFF_BITS(resp, 126, 2);
-	if (csd_struct != 1 && csd_struct != 2) {
+	if (csd_struct != 1 && csd_struct != 2 && csd_struct != 3) {
 		printk(KERN_ERR "%s: unrecognised CSD structure version %d\n",
 			mmc_hostname(card->host), csd_struct);
 		return -EINVAL;
@@ -208,7 +208,7 @@ static int mmc_read_ext_csd(struct mmc_card *card)
 	}
 
 	ext_csd_struct = ext_csd[EXT_CSD_REV];
-	if (ext_csd_struct > 2) {
+	if (ext_csd_struct > 5) {
 		printk(KERN_ERR "%s: unrecognised EXT_CSD structure "
 			"version %d\n", mmc_hostname(card->host),
 			ext_csd_struct);
@@ -512,7 +512,13 @@ static void mmc_detect(struct mmc_host *host)
 /*
  * Suspend callback from host.
  */
+/* ATHENV */
+#if 0
 static void mmc_suspend(struct mmc_host *host)
+#else
+static int mmc_suspend(struct mmc_host *host)
+#endif
+/* ATHENV */
 {
 	BUG_ON(!host);
 	BUG_ON(!host->card);
@@ -522,6 +528,9 @@ static void mmc_suspend(struct mmc_host *host)
 		mmc_deselect_cards(host);
 	host->card->state &= ~MMC_STATE_HIGHSPEED;
 	mmc_release_host(host);
+/* ATHENV */
+	return 0;
+/* ATHENV */
 }
 
 /*
@@ -530,7 +539,13 @@ static void mmc_suspend(struct mmc_host *host)
  * This function tries to determine if the same card is still present
  * and, if so, restore all state to it.
  */
+/* ATHENV */
+#if 0
 static void mmc_resume(struct mmc_host *host)
+#else
+static int mmc_resume(struct mmc_host *host)
+#endif
+/* ATHENV */
 {
 	int err;
 
@@ -540,7 +555,8 @@ static void mmc_resume(struct mmc_host *host)
 	mmc_claim_host(host);
 	err = mmc_init_card(host, host->ocr, host->card);
 	mmc_release_host(host);
-
+/* ATHENV */
+#if 0
 	if (err) {
 		mmc_remove(host);
 
@@ -548,7 +564,10 @@ static void mmc_resume(struct mmc_host *host)
 		mmc_detach_bus(host);
 		mmc_release_host(host);
 	}
-
+#else
+	return err;
+#endif
+/* ATHENV */
 }
 
 #else
